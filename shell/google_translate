@@ -1,1 +1,1 @@
-wget -q -U Mozilla -O output.mp3 "http://translate.google.com/translate_tts?ie=UTF-8&tl=en&q=hello+world
+wget -q -U Mozilla -O $1 "http://translate.google.com/translate_tts?ie=UTF-8&tl=en&q=$2
