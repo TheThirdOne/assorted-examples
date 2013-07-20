@@ -1,0 +1,1 @@
+curl https://api.github.com/gitignore/templates/$1 | grep source | sed -e 's/  \"source\": \"//' -e 's/\\n/\n/g' -e 's/  \"//' >> .gitignore
