@@ -1,0 +1,222 @@
+<html>
+  <head>
+    <style>
+html { background: #222 }
+ 
+* {
+  margin: 0;
+	padding: 0;
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+}
+.text{
+  text-shadow: 0 0 10px #20D0F4;
+  position: relative;
+	top: -163px;
+  color: #17c0e9;
+  font-family:"Verdana", Arial, sansserif;
+  
+}
+#aperature{
+  
+  left:165px;
+  -webkit-transform: skew(-20deg); 
+  font-size:600%;
+  -webkit-animation: aperture 3s 1;
+}
+#labs{
+  top: -173px;
+  left:270px;
+  font-size:200%;
+  -webkit-animation: labs 3s 1;
+}
+@-webkit-keyframes aperture {
+  0% {opacity: 0}
+  60% {opacity: 0}
+  70% {opacity: 1}
+}
+@-webkit-keyframes labs {
+  0% {opacity: 0}
+  80% {opacity: 0}
+  100% {opacity: 1}
+}
+ul {
+	border-radius:50%;
+	/*overflow:hidden;*/
+	position: relative;
+	top: 250px;
+	left: 0px;
+	width: 250px;
+	height: 250px;
+  margin: -125px;
+  -webkit-transform: rotate(-5deg); 
+
+  
+}
+.mover{
+  position: relative;
+  top:-50;
+}
+/*#FF6A00*/
+.circle{
+  -webkit-mask-image: -webkit-radial-gradient(circle, black, black);
+  
+  position: relative;
+  position: relative;
+	top:0px;
+	left: 0px;
+  width: 200px;
+	height: 200px;
+  border-radius:50%;
+  overflow: hidden;
+  
+}
+ul li {
+	position: absolute;
+	overflow: hidden;
+	left: 90px;
+	top: 90px;
+	margin-left: 50px;
+	margin-top: -250px;
+
+	transform-origin: 100% 100%;
+	-ms-transform-origin: 100% 100%;
+	-webkit-transform-origin: 100% 150%;
+	-webkit-transform: translate(50px,100px);
+}
+
+li {
+  height: 0;
+  width: 0;
+  border: 50px solid transparent;
+  border-bottom-color: #17c0e9;
+  position: absolute;
+}
+
+
+
+
+li:nth-child(1){
+	-webkit-transform: rotate(0deg);
+	-webkit-animation: open-shell-7 3s 1;
+}
+li:nth-child(2){ 
+ 
+	-webkit-transform: rotate(45deg);
+	-webkit-animation: open-shell-8 3s 1;
+}
+li:nth-child(3){
+	-webkit-transform: rotate(90deg)  ;
+	-webkit-animation: open-shell-1 3s 1;
+}
+li:nth-child(4){
+   opacity:0;
+	-webkit-transform: rotate(135deg);
+	-webkit-animation: open-shell-2 3s 1;
+}
+li:nth-child(5){
+	-webkit-transform: rotate(180deg);
+	-webkit-animation: open-shell-3 3s 1;
+}
+
+li:nth-child(6){
+	-webkit-transform: rotate(225deg) ;
+	-webkit-animation: open-shell-4 3s 1;
+}
+
+li:nth-child(7){
+	-webkit-transform: rotate(270deg) ; 
+	-webkit-animation: open-shell-5 3s 1;
+}
+
+li:nth-child(8){
+	-webkit-transform: rotate(315deg) ; 
+	-webkit-animation: open-shell-6 3s 1;
+}
+
+@-webkit-keyframes open-shell-7 { /*topmiddleleft*/
+	0% {-webkit-transform: rotate(90deg) scale(0.1);}
+  20%  { -webkit-transform: rotate(90deg)}
+	40% { -webkit-transform: rotate(135deg)  ;}
+  50% { -webkit-transform: rotate(180deg)   ;}
+	60% { -webkit-transform: rotate(225deg) ; }
+  70% { -webkit-transform: rotate(270deg) ; }
+  80% { -webkit-transform: rotate(315deg) ; }
+  90% { -webkit-transform: rotate(360deg) ; }
+	100% { -webkit-transform: rotate(360deg)  }
+}
+
+@-webkit-keyframes open-shell-8 { /*topleft*/
+	0% {-webkit-transform: rotate(90deg) scale(0.1);	}
+	20%  { -webkit-transform: rotate(90deg)   scale(1); }
+  40% { -webkit-transform: rotate(135deg)  ;}
+  50% { -webkit-transform: rotate(180deg)   ;}
+	60% { -webkit-transform: rotate(225deg) ; }
+  70% { -webkit-transform: rotate(270deg) ; }
+  80% { -webkit-transform: rotate(315deg) ; }
+  90% { -webkit-transform: rotate(360deg) ; }
+	100% { -webkit-transform: rotate(405deg) ;}
+}
+@-webkit-keyframes open-shell-5 {/*bottom*/
+	0% {-webkit-transform: rotate(90deg) scale(0.1);	}
+	20%  { -webkit-transform: rotate(90deg)   scale(1); }
+	40% { -webkit-transform: rotate(135deg)  ;}
+  50% { -webkit-transform: rotate(180deg)   ;}
+	60% { -webkit-transform: rotate(225deg) ; }
+  70% { -webkit-transform: rotate(270deg) ; }
+	100% { -webkit-transform: rotate(270deg)   ; }
+}
+
+@-webkit-keyframes open-shell-6 {/*middlebotttomleft*/
+	0% {-webkit-transform: rotate(90deg) scale(0.1);	}
+	20%  { -webkit-transform: rotate(90deg)   scale(1); }
+  40% { -webkit-transform: rotate(135deg)  ;}
+  50% { -webkit-transform: rotate(180deg)   ;}
+	60% { -webkit-transform: rotate(225deg) ; }
+  70% { -webkit-transform: rotate(270deg) ; }
+  80% { -webkit-transform: rotate(315deg) ; }
+	100% { -webkit-transform: rotate(315deg)   ; }
+}
+
+@-webkit-keyframes open-shell-1 {
+	0% {-webkit-transform: rotate(90deg) scale(0.1);	}
+	20%  { -webkit-transform: rotate(90deg)   scale(1); }
+	100% { -webkit-transform: rotate(90deg)  );}
+}
+
+@-webkit-keyframes open-shell-2 {
+	0% {-webkit-transform: rotate(90deg) scale(0.1);opacity: 1}
+	20% { -webkit-transform: rotate(90deg)   scale(1);}
+	40% { -webkit-transform: rotate(135deg);}
+  60% {opacity: 1}
+  80% {opacity: 0}
+}
+@-webkit-keyframes open-shell-3 {
+	0% {-webkit-transform: rotate(90deg) scale(0.1);}
+	20% {-webkit-transform: rotate(90deg)   scale(1);}
+  40% {-webkit-transform: rotate(135deg);}
+	50% {-webkit-transform: rotate(180deg);}
+}
+
+
+@-webkit-keyframes open-shell-4 {
+	0% {-webkit-transform: rotate(90deg) scale(0.1);}
+	20% {-webkit-transform: rotate(90deg)   scale(1);}
+  40% {-webkit-transform: rotate(135deg);}
+  50% {-webkit-transform: rotate(180deg);}
+	60% {-webkit-transform: rotate(225deg);}
+}
+    </style>
+  </head>
+  <body>
+  <div class="circle"><div class="mover"><ul>
+  <li></li> <li></li>
+   <li></li> <li></li> 
+    <li></li> <li></li> 
+     <li></li> <li></li>
+  </ul></div></div>
+<div id= "aperature"class="text"><b>APERTURE</b></div>
+<div  id= "labs"class="text">L A B O R A T O R I E S</div> 
+  </body>
+</html>
