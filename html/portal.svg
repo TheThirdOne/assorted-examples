@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 14.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 43363)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="2500px" height="644px" viewBox="0 0 2500 644" enable-background="new 0 0 2500 644" xml:space="preserve">
+<g>
+	<circle fill-rule="evenodd" clip-rule="evenodd" fill="#111111" cx="323.743" cy="321.744" r="311.243"/>
+	<rect x="450" y="180" width="2000" height="425" fill="#111111"/>
+</g>
+<g transform="translate(644,0) scale(-1,1)">
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-00 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-0 321 321" dur="0s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-45 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-45 321 321" dur=".5s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-90 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-90 321 321" dur="1.5s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-135 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-135 321 321" dur="2s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-180 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-180 321 321" dur="2.5s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-225 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-225 321 321" dur="3s"/></path>
+<path fill-rule="evenodd" filter="url(#f1)" clip-rule="evenodd" fill="#17C0E9" transform="rotate(-270 321 321)" d="m 73.109,463.532 c -0.391,0.05 -0.781,0.099 -1.171,0.147 35.109,60.462 84.931,102.002 147.382,127.305 36.735,-31.118 73.794,-63.606 109.958,-95.841 4.929,-4.395 9.335,-8.582 14.348,-13.691 -90.649,-5.357 -180.457,-11.806 -270.517,-17.92 z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 321 321" to="-270 321 321" dur="3.5s"/></path>
+</g>
+<defs>
+    <filter id="f1" x="0" y="0" width="200%" height="200%">
+      <feOffset result="offOut" in="SourceGraphic" dx="0" dy="0" />
+      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="10" />
+      <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+    </filter>
+    <animate xlink:href="#fade" animateType="CSS" animateName="opacity" begin = "0s" from="1" to="0" dur="4s" repeatCount="indefinite"/>
+</defs>
+
+<text filter="url(#f1)" font-size="320" font-family="Verdana" font-weight="bold" x="660" y="445" fill="#17C0E9" transform="skewX(-25)">APERTURE</text>
+<text filter="url(#f1)" font-size="140" font-family="Verdana" x="800" y="575" fill="#17C0E9">L A B O R I T O R I E S</text>
+</svg>
+<!-- stroke-width="10" stroke="#07B0D9" -->
