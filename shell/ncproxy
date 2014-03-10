@@ -1,0 +1,10 @@
+mkfifo named-pipe
+mkfifo $4.in.tmp
+mkfifo $4.out.tmp
+echo "$1 $2 $3" >> $4
+cat named-pipe | nc -l $3 | tee $4.in.tmp | nc $1 $2 | tee $4.out.tmp > named-pipe &
+cat $4.in.tmp | sed -e "s/^/IN: "  >> $4 &
+cat $4.out.tmp | sed -e "s/^/OUT: "  >> $4
+rm $4.in.tmp
+rm $4.out.tmp
+rm named-pipe
