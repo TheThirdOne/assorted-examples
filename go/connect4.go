@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-var error Board
-
 type Board struct {
 	player int8
 	board  [7][]int8
@@ -13,7 +11,7 @@ type Board struct {
 
 func (self *Board) drop(index int8) *Board {
 	if len(self.board[index]) > 5 {
-		return &error
+		return nil
 	}
 	copy := *self
 	copy.board[index] = append(copy.board[index], copy.player)
@@ -150,7 +148,7 @@ func (self *Board) evaluate() int8{
 	}
 	for i := 0; i < 7; i++{
 		tmp := self.drop(int8(i))
-		if tmp == &error {
+		if tmp == nil {
 			continue
 		}
 		score := tmp.evaluate()
