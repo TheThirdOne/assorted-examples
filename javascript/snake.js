@@ -49,6 +49,24 @@ var clear = function(map){
     }
   }
 }
+var vision = function(game){
+  var distance = 5;
+  var out = [];
+  for(var x = game.player.x - distance; x < game.player.x + distance; x++){
+    out[x + distance - game.player.x] = [];
+    for(var y = game.player.y - distance;y < game.player.y + distance; y++){
+      if(x < 0 || x >= game.map.w || y < 0 || y >= game.map.h){
+        out[x + distance - game.player.x][y + distance - game.player.y] = 1;
+      }else if(game.map[x][y] > 0){
+        out[x + distance - game.player.x][y + distance - game.player.y] = game.map[x][y]/game.player.length;
+      }else{
+        out[x + distance - game.player.x][y + distance - game.player.y] = game.map[x][y];
+      }
+    }
+  }
+  return out;
+}
+//here down is just for humans
 var draw = function(game){
   var canvas = document.getElementById("canvas");
   var ctx = canvas.getContext("2d");
