@@ -28,3 +28,31 @@ function getSections(term,subj,crse){
   http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
   http.send(params);
 }
+function conflict(a,b){
+  var day = false;
+  for(var i = 0; i < a.days.length; i++){
+    day = day || b.days.indexOf(a.days[i]) !== -1;
+  }
+  if(!day){
+    return false;
+  }
+  var aTime = parseTime(a.time);
+  var bTime = parseTime(b.time);
+  return (aTime[0] >= bTime[0] && aTime[0] <= bTime[1]) ||
+         (bTime[0] >= aTime[0] && bTime[0] <= aTime[1]);
+}
+function parseTime(time){
+  return time.split("-").map(function(a){
+    return new Date("March 7, 2015 " + a);
+  });
+}
+function testAllConflicts(arr){
+  for(var i = 0; i < arr.length; i++){
+    for(var j = i+1; j < arr.length; j++){
+      if(conflict(arr[i],arr[j])){
+        return true;
+      }
+    }
+  }
+  return false;
+}
