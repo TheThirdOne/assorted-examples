@@ -14,8 +14,10 @@ createMacro("not",     0, "-[+>+<]>[-<+>]<")
 createMacro("xor",    -1, "<[->+<]+>-[<->+[-]]<")
 createMacro("xnor",   -1, "<[->+<]>-[<+>+[-]]<")
 createMacro("and",    -1, "<[->+<]+>--[<->[+]]<")
-createMacro("add",    -1, " [-<+>]<")
+createMacro("add",    -1, "[-<+>]<")
 createMacro("mul",    -1, "<[->[->+>+<<]>>[-<<+>>]<<<]>[-]>[-<<+>>]<<")
+createMacro("eq",     -1, "<[->-<]+>[<->[-]]<")
+createMacro("neq",    -1, "<[->-<]>[<+>[-]]<")
 createMacro("nand",   -1, "<[->+<]>--[<+>[+]]<")
 createMacro("or",     -1, "<[->+<]>[<+>[-]]<")
 createMacro("nor",    -1, "<[->+<]+>[<->[-]]<")
@@ -76,7 +78,20 @@ fcns.createVar = function(label){
 fcns.createLabel = function(label){
   vars[label] = stack;
 }
-
+fcns.if = function(code){
+  emit("[",0);
+  code();
+  emit("-]<",-1);
+}
+fcns.ifelse = function(a,b){
+  fcns.dup();
+  emit("[",0);
+  a();
+  emit("-]<",-1);
+  emit("-[",0);
+  b();
+  emit("+]<",-1);
+}
 var emit = function(str,diff){
   code += str;
   stack += diff;
