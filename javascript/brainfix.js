@@ -27,6 +27,22 @@ createMacro("pop",    -1, "[-]<")
 createMacro("scand",   1, ">,>++++[-<------------>]<")
 createMacro("printd",  1, ">++++[-<++++++++++++>]<.[-]<")
 
+fcns.prints = function(s){
+  var code = ">";
+  var previous = 0;
+  for(var k = 0; k < s.length;k++){
+    var diff = s.charCodeAt(k) - previous;
+    previous += diff;
+    var sign = (diff > 0)?"+":"-";
+    diff = diff > 0?diff:-diff;
+    for(var i = 0; i < diff; i++){
+      code += sign;
+    }
+    code += ".";
+  }
+  code += "[-]<";
+  emit(code,0);
+}
 fcns.loadc = function(c){
   var out = ">";
   for(var i = 0; i < c;i++){
@@ -135,7 +151,7 @@ fcns.switch = function(cases,triggers,def){
     cases[i]()
     emit("]<",0);
   }
-  emit("]<",-2);
+  emit("<",-2);
 }
 var emit = function(str,diff){
   code += str;
