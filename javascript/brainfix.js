@@ -142,7 +142,7 @@ fcns.switch = function(cases,triggers,def){
     code += "[";
     previous = triggers[item];
   }
-  emit(code,1);
+  emit(code,0);
   emit(">-",0);   //set run = false
   def()
   emit("<[-]",0); //set cond = 0
