@@ -24,6 +24,7 @@ createMacro("or",     -1, "<[->+<]>[<+>[-]]<")
 createMacro("nor",    -1, "<[->+<]+>[<->[-]]<")
 createMacro("swap",    0, "<[->>+<<]>[-<+>]>[-<+>]<")
 createMacro("pop",    -1, "[-]<")
+createMacro("scans",   1, ">,")
 createMacro("scand",   1, ">,>++++[-<------------>]<")
 createMacro("printd",  1, ">++++[-<++++++++++++>]<.[-]<")
 
@@ -122,6 +123,21 @@ fcns.ifelse = function(a,b){
     throw "Code inside if causes net stack change"
   }
   emit("+]<",-1);
+}
+fcns.whilenot = function(c,code){
+  var neg = "", pos = "";
+  for(var i = 0; i < c; i++){
+    neg += "-";
+    pos += "+";
+  }
+  emit(neg,0);
+  emit("["+pos",0);
+  var temp = stack;
+  code();
+  if(temp !== stack){
+    throw "Code inside while causes net stack change"
+  }
+  emit(neg + "]",0);
 }
 
 //format: old stack | cond | run (generated)
