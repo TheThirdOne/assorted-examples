@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <style>
+      #el {
+        display: inline-block;
+        font-size: 40;
+      }
+      #wrapper {
+      	text-align:center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrapper"><br><br><br><br><div id="el">R</div></div>
+    <script>
+      var el = document.getElementById("el");
+      var flip, deg, time;
+      
+      var start = function(){
+        flip = Math.random() > .5;
+        deg = Math.floor(Math.random()*10)*20
+        el.style.cssText = "transform:"+(flip?"scaleX(-1)":"")+"rotate("+deg+"deg);";
+        time = new Date().getTime();
+      }
+      
+      var text = "";
+      var log = function(flip, deg, success, time){
+        text += flip + "," + deg + "," + success + "," + time + "\n";
+      }
+      document.onkeydown = function(e){
+        if(deg !== undefined && (e.keyCode === 65 || e.keyCode === 68)){
+          var success = (e.keyCode === 68) ^ flip;
+          log(flip, deg, success, new Date().getTime() - time);
+          el.style.display = "none";
+          setTimeout(start,1000);
+        }
+      }
+      el.style.display = "none";
+      setTimeout(start,1000);
+    </script>
+  </body>
+</html>
