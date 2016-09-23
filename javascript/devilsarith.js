@@ -21,7 +21,7 @@ function primeFactor(n){
   if(n != 1){
     
     console.warn("missed prime ",n);
-    primes = generatePrimes(n)[1];
+    primes = generatePrimes(n+1)[1];
     out.push(...primeFactor(n));
   }
   return out;
