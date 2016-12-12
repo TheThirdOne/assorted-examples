@@ -86,6 +86,20 @@ function prove(thm, truths=[], hints=[]){
   if(thm.type === 'binary' && thm.connective === '->'){
     // Use conditional derivation to derive a conditional
     return [{type:'show', exp: thm},{type: 'sub', steps:[{type:'assumption', reason:'assumption (cd)', exp: thm.lhs},...prove(thm.rhs,[thm.lhs,...truths],[...hints])]}];
+  }else if(thm.type === 'binary' && thm.connective === '<->'){
+    // Show the subparts and then use conditional biconditional to derive biconditionals
+    let forward = IF(thm.lhs,thm.rhs);
+    let backward = IF(thm.rhs,thm.lhs);
+    let steps = [...prove(forward,[...truths],[...hints]),                    // Prove the forward case
+                 ...prove(backward,[...truths],[...hints]),                   // Then prove the backward case
+                {type:'derived',reason:'CB',exp:thm,from:[forward,backward]}];// Then combine them
+    return [{type:'show', exp: thm},{type: 'sub', steps:steps}];
+  }else if(thm.type === 'binary' && thm.connective === '^'){
+    // Show the subparts and then use adjunction to derive conjunctions
+    let steps = [...prove(thm.lhs,[...truths],[...hints]),                    // Prove the left side
+                 ...prove(thm.rhs,[...truths],[...hints]),                    // Then prove the right case
+                {type:'derived',reason:'ADJ',exp:thm,from:[thm.lhs,thm.rhs]}];// Then combine them
+    return [{type:'show', exp: thm},{type: 'sub', steps:steps}];
   }else{
     // Otherwise use indirect derivation
     steps.push({type:'assumption', reason:'assumption (id)', exp: NOT(thm)});
@@ -102,14 +116,15 @@ function prove(thm, truths=[], hints=[]){
     used.push(...newtruths);
     
     if(!newsteps.length&&!finished(truths)){
-      // If modus ponens and tollens weren't enough look for a negated conditional then prove the base version
-      let negated = truths.filter(exp=>negofCond(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
+      // If modus ponens and tollens weren't enough look for a negated connective then prove the base version
+      let negated = truths.filter(exp=>negofConnective(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
       if(negated.length===0){
         // If there aren't any of those try deriving an antecendent to a conditional
         let unusedConds = truths.filter(exp=>exp.type === 'binary'&&exp.connective === '->'        // Look for a conditional
                             &&!truths.filter(ant=>equiv(ant,exp.lhs)||contra(ant,exp.lhs)).length// That does not have its antecendent or negation of its antecedent fufilled
                             &&!hints.filter(hint=>equiv(hint,exp)).length);                        // And is not in the hints
         if(unusedConds.length===0){
+          console.log(truths.map(str),hints.map(str))
           throw "Missing Hint (or not true) (Hard)";
         }
         newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
@@ -152,6 +167,7 @@ function finished(truths){
 }
 
 function deduce(truths, listed){
+  // Use MP and MT
   var conds = truths.filter(exp=>exp.type === 'binary' && exp.connective === '->');
   var mp = conds.filter(cd=>truths.filter(ant=>equiv(cd.lhs,ant)).length);
   mp = mp.filter(cd=>!truths.filter(tr=>equiv(cd.rhs,tr)).length);
@@ -177,12 +193,37 @@ function deduce(truths, listed){
     }
     steps.push({type: 'derived', reason:'MT',exp:NOT(cd.lhs),from:[NOT(cd.rhs),cd]});
   }
-  var DNConds = truths.filter(exp=>exp.type === 'not'&&cond(exp)&&
+  
+  // Double negate to get connectives free
+  var DNConns = truths.filter(exp=>exp.type === 'not'&&connnective(exp)&&
                 !truths.filter(base=>equal(base,simplify(exp).base)).length);
-  for(let dncd of DNConds){
+  for(let dncd of DNConns){
     let base = simplify(dncd).base;
     steps.push(...reduction(dncd,base));
   }
+  
+  // Use biconditional conditional to get conditionals free
+  var biconds = truths.filter(exp=>exp.type === 'binary' && exp.connective === '<->');         // Find biconditionals
+  var forward = biconds.filter(bc=>!truths.filter(exp=>equiv(IF(bc.lhs,bc.rhs),exp)).length);  // Without the forward
+  var backward = biconds.filter(bc=>!truths.filter(exp=>equiv(IF(bc.rhs,bc.lhs),exp)).length); // Or backward conditionals written
+  for(let bc of forward){
+    steps.push({type:'derived', reason:'BC',exp:IF(bc.lhs,bc.rhs),from:[bc]});
+  }
+  for(let bc of backward){
+    steps.push({type:'derived', reason:'BC',exp:IF(bc.rhs,bc.lhs),from:[bc]});
+  }
+  
+  // Use simplification to add new truths to use
+  var ands  = truths.filter(exp=>exp.type === 'binary' && exp.connective === '^');// Find conjuctions
+  var left  = ands.filter(and=>!truths.filter(exp=>equiv(and.lhs,exp)).length);   // Without the left
+  var right = ands.filter(and=>!truths.filter(exp=>equiv(and.rhs,exp)).length);   // Or right expressions written
+  for(let and of left){
+    steps.push({type:'derived', reason:'S',exp:and.lhs,from:[and]});
+  }
+  for(let and of right){
+    steps.push({type:'derived', reason:'S',exp:and.rhs,from:[and]});
+  }
+  
   return [steps,steps.map(a=>a.exp)];
 }
 
@@ -215,13 +256,13 @@ function equiv(a,b){
   return a.i%2 === b.i%2 && equal(a.base,b.base);
 }
 
-function negofCond(exp){
+function negofConnective(exp){
   exp = simplify(exp);
-  return exp.i%2 === 1 && exp.base.type === 'binary' && exp.base.connective === '->';
+  return exp.i%2 === 1 && exp.base.type === 'binary';
 }
-function cond(exp){
+function connnective(exp){
   exp = simplify(exp);
-  return exp.i%2 === 0 && exp.base.type === 'binary' && exp.base.connective === '->';
+  return exp.i%2 === 0 && exp.base.type === 'binary';
 }
 
 function simplify(a){
@@ -244,7 +285,7 @@ function equal(a,b){
   if(a.type === 'not'){
     return equal(a.lhs,b.lhs);
   }
-  return equal(a.lhs,b.lhs)&&equal(a.rhs,b.rhs);
+  return a.connective===b.connective&&equal(a.lhs,b.lhs)&&equal(a.rhs,b.rhs);
 }
 
 
