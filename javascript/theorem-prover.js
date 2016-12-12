@@ -64,32 +64,43 @@ function prove(thm, truths=[], hints=[]){
   var steps = [];
   var used = [];
   if(thm.type === 'binary' && thm.connective === '->'){
-    return [{type:'show', exp: thm},{type: 'sub', steps:[{type:'assumption', reason:'assumption (cd)', exp: thm.lhs},...prove(thm.rhs,[thm.lhs,...truths])]}];
+    // Use conditional derivation to derive a conditional
+    return [{type:'show', exp: thm},{type: 'sub', steps:[{type:'assumption', reason:'assumption (cd)', exp: thm.lhs},...prove(thm.rhs,[thm.lhs,...truths],[...hints])]}];
   }else{
+    // Otherwise use indirect derivation
     steps.push({type:'assumption', reason:'assumption (id)', exp: NOT(thm)});
     truths.push(NOT(thm));
     used.push(NOT(thm));
   }
+  
+  // Use Modus Ponens and Modus Tollens until they can no longer be applied or the derivation is finished
   var newsteps, newtruths;
   do{
     [newsteps,newtruths] = deduce(truths,used);
     steps.push(...newsteps);
     truths.push(...newtruths);
     used.push(...newtruths);
+    console.log(...newtruths.map(str))
   }while(newsteps.length&&!finished(truths));
   
   if(!finished(truths)){
-    let negated = used.filter(exp=>negofCond(exp));
+    // If modus ponens and tollens weren't enough look for a negated conditional then prove the base version
+    let negated = truths.filter(exp=>negofCond(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
+    console.log(negated.map(str));
     if(negated.length===0){
-      console.log(used,truths.map(str));
+      // If there aren't any of those try deriving an antecendent to a conditional
       throw "Missing Hint (or not true)";
     }
     negated = negated[0];
+    if(!used.filter(exp=>equal(exp,negated)).length){
+      steps.push({type:'repetition', reason:'repetition', exp:negated});
+    }
     let base = simplify(negated).base;
     console.log(str(negated),str(base));
     steps.push(...reduction(negated, NOT(base)));
-    steps.push(...prove(base,[...truths]));
+    steps.push(...prove(base,[...truths],[negated,...hints]));
   }else if(!finished(used)){
+    // If the contradiction isn't inside the immediate derivation, repeat the necessary lines
     let part = used.filter(a=>truths.filter(b=>contra(a,b)).length);
     if(part.length === 0){
       part = truths.filter(a=>truths.filter(b=>contra(a,b)).length);
@@ -104,12 +115,14 @@ function prove(thm, truths=[], hints=[]){
   
   return [{type:'show', exp: thm}, {type: 'sub', steps:steps}];
 }
+
+// Is there a contradiction in the truths
 function finished(truths){
   return !!truths.filter(a=>truths.filter(b=>contra(a,b)).length).length;
 }
 
 function deduce(truths, listed){
-  var conds = truths.filter(a=>a.type === 'binary'&&a.connective==='->');
+  var conds = truths.filter(exp=>exp.type === 'binary' && exp.connective === '->');
   var mp = conds.filter(cd=>truths.filter(ant=>equiv(cd.lhs,ant)).length);
   mp = mp.filter(cd=>!truths.filter(tr=>equiv(cd.rhs,tr)).length);
   var mt = conds.filter(cd=>truths.filter(con=>contra(cd.rhs,con)).length);
@@ -118,7 +131,7 @@ function deduce(truths, listed){
   var steps = [];
   for(let cd of mp){
     if(!listed.filter(exp=>equal(exp,cd)).length){
-      steps.push({type:'repetition', reason:'repetition', exp:cd});
+      //steps.push({type:'repetition', reason:'repetition', exp:cd});
     }
     let list = false;
     for(let exp of listed){
@@ -131,7 +144,7 @@ function deduce(truths, listed){
     if(!list){
       for(let exp of truths){
         if(equiv(exp,cd.lhs)){
-          steps.push({type:'repetition', reason:'repetition', exp:exp});
+          //steps.push({type:'repetition', reason:'repetition', exp:exp});
           steps.push(...reduction(exp,cd.lhs));
           break;
         }
@@ -141,7 +154,7 @@ function deduce(truths, listed){
   }
   for(let cd of mt){
     if(!listed.filter(exp=>equal(exp,cd)).length){
-      steps.push({type:'repetition', reason:'repetition', exp:cd});
+      //steps.push({type:'repetition', reason:'repetition', exp:cd});
     }
     let list = false;
     for(let exp of listed){
@@ -154,13 +167,23 @@ function deduce(truths, listed){
     if(!list){
       for(let exp of truths){
         if(contra(exp,cd.rhs)){
-          steps.push({type:'repetition', reason:'repetition', exp:exp});
+          //steps.push({type:'repetition', reason:'repetition', exp:exp});
           steps.push(...reduction(exp,NOT(cd.rhs)));
           break;
         }
       }
     }
+    
     steps.push({type: 'derived', reason:'MT',exp:NOT(cd.lhs),from:[NOT(cd.rhs),cd]});
+  }
+  var DNConds = truths.filter(exp=>exp.type === 'not'&&cond(exp)&&
+                !truths.filter(base=>equal(base,simplify(exp).base)).length);
+  for(let dncd of DNConds){
+    if(!listed.filter(exp=>equal(exp,dncd)).length){
+      //steps.push({type:'repetition', reason:'repetition', exp:dncd});
+    }
+    let base = simplify(dncd).base;
+    steps.push(...reduction(dncd,base));
   }
   return [steps,steps.map(a=>a.exp)];
 }
@@ -197,6 +220,10 @@ function equiv(a,b){
 function negofCond(exp){
   exp = simplify(exp);
   return exp.i%2 === 1 && exp.base.type === 'binary' && exp.base.connective === '->';
+}
+function cond(exp){
+  exp = simplify(exp);
+  return exp.i%2 === 0 && exp.base.type === 'binary' && exp.base.connective === '->';
 }
 
 function simplify(a){
