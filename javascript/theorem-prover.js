@@ -1,3 +1,4 @@
+// Lexer; turns a string or iterable into a sequence of tokens
 function* lex(str){
   if((typeof str) === 'string'){
     str = function*(str){
@@ -34,6 +35,8 @@ function* lex(str){
   }
 }
 
+// Constructs a parse tree from tokens
+// Warning: Not very robust
 function parse(l){
   var n = l.next().value;
   if(n.token === 'variable'){
@@ -62,6 +65,7 @@ function parse(l){
   return {type: 'binary', lhs:lhs, rhs:rhs, connective:c};
 }
 
+// Helpers to construct various connectives
 function NOT(a){
   return {type:'not',lhs:a};
 }
@@ -78,7 +82,15 @@ function AND(lhs,rhs){
             lhs:lhs,rhs:rhs};
 }
 
-
+// Simple prover that follows thease rules (Always use above tules first)
+// 1. To derive a conditional, assume the antecedent, then derive the consequent
+// 2. To derive a conjuction, derive the conjucts, then use adjunction
+// 3. To derive a biconditional, derive the two corresponding conditionals, then use conditional biconditional
+// 4. To derive anyting else, use indirect derivation
+// 5. Whenever an expression follows from the antecedent lines (allowing DN to be inserted as needed) by MP, MT, S, or BC, enter that as a line
+// 6. Use DN to reduce doubled negations of conjuctions, biconditionals, and conditionals to more useful forms
+// 7. In an indirect derivation, if a negation of a conditional, conjuction or biconditional occurs, derive the base version.
+// 8. When a conditional occurs without the ability to use MP or MT, derive the antecedent
 function prove(thm, truths=[], hints=[]){
   console.log('show ', str(thm));
   var steps = [];
@@ -124,13 +136,11 @@ function prove(thm, truths=[], hints=[]){
                             &&!truths.filter(ant=>equiv(ant,exp.lhs)||contra(ant,exp.lhs)).length// That does not have its antecendent or negation of its antecedent fufilled
                             &&!hints.filter(hint=>equiv(hint,exp)).length);                        // And is not in the hints
         if(unusedConds.length===0){
-          console.log(truths.map(str),hints.map(str))
           throw "Missing Hint (or not true) (Hard)";
         }
         newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
         steps.push(...newsteps);
         truths.push(unusedConds[0].lhs);
-        console.log('leaving hint 6');
       }else{
         negated = negated[0];
         if(!used.filter(exp=>equal(exp,negated)).length){
@@ -161,11 +171,8 @@ function prove(thm, truths=[], hints=[]){
   return [{type:'show', exp: thm}, {type: 'sub', steps:steps}];
 }
 
-// Is there a contradiction in the truths
-function finished(truths){
-  return !!truths.filter(a=>truths.filter(b=>contra(a,b)).length).length;
-}
-
+// Main powerhouse of the prover, encodes Modus ponens, modus tollens, simplification, biconditional conditional
+// Generates steps to produce everything that can be done with a single invokation of the above rules
 function deduce(truths, listed){
   // Use MP and MT
   var conds = truths.filter(exp=>exp.type === 'binary' && exp.connective === '->');
@@ -227,6 +234,7 @@ function deduce(truths, listed){
   return [steps,steps.map(a=>a.exp)];
 }
 
+// Uses Double negatition to reduce expressions
 function reduction(from, to){
   var from_ = simplify(from);
   var to_ = simplify(to);
@@ -246,16 +254,15 @@ function reduction(from, to){
   return steps
 }
 
+// General helpers
 function contra(a,b){
   a = simplify(a), b = simplify(b);
   return a.i%2 !== b.i%2 && equal(a.base,b.base);
 }
-
 function equiv(a,b){
   a = simplify(a), b = simplify(b);
   return a.i%2 === b.i%2 && equal(a.base,b.base);
 }
-
 function negofConnective(exp){
   exp = simplify(exp);
   return exp.i%2 === 1 && exp.base.type === 'binary';
@@ -264,7 +271,6 @@ function connnective(exp){
   exp = simplify(exp);
   return exp.i%2 === 0 && exp.base.type === 'binary';
 }
-
 function simplify(a){
   if(a.type === 'not'){
     let b = simplify(a.lhs);
@@ -274,7 +280,6 @@ function simplify(a){
     return {i:0, base:a};
   }
 }
-
 function equal(a,b){
   if(a.type !== b.type){
     return false;
@@ -287,8 +292,11 @@ function equal(a,b){
   }
   return a.connective===b.connective&&equal(a.lhs,b.lhs)&&equal(a.rhs,b.rhs);
 }
+function finished(truths){
+  return !!truths.filter(a=>truths.filter(b=>contra(a,b)).length).length;
+}
 
-
+// For generating strings of the results
 function str(a){
   if(a.type === 'not'){
     return '~' + str(a.lhs);
@@ -300,7 +308,6 @@ function str(a){
     return '('+str(a.lhs)+a.connective+str(a.rhs)+')';
   }
 }
-
 function writeProof(steps,i=1,indent=' ',map=new Map()){
   var out = [];
   var reasons = [];
@@ -341,7 +348,6 @@ function writeProof(steps,i=1,indent=' ',map=new Map()){
   }
   return [out,reasons,i];
 }
-
 function prettify(steps,reasons){
   var max = 0, out = '';
   for(let step of steps){
@@ -355,6 +361,7 @@ function prettify(steps,reasons){
   return out;
 }
 
+// Helpful for generating expressions
 function toConditional(exp){
   if(exp.type === 'variable'){
     return exp;
@@ -376,3 +383,4 @@ function toConditional(exp){
   return {type:'binary',connective:exp.connective,
   lhs:toConditional(exp.lhs),rhs:toConditional(exp.rhs)};
 }
+var pl = s=>parse(lex(s));
