@@ -14,6 +14,13 @@ function* lex(str){
       case ')':
         yield {token:a};
         break;
+      case '<':
+        if(str.next().value === '-' && str.next().value === '>'){
+          yield {token:'<->'};
+        }else{
+          throw "ERROR unexpected value";
+        }
+        break;
       case '-':
         if(str.next().value === '>'){
           yield {token:'->'};
@@ -42,7 +49,7 @@ function parse(l){
   var lhs = parse(l);
   
   n = l.next().value;
-  if(n.token !== '->' && n.token !== 'v' && n.token !== '^'){
+  if(n.token !== '->' && n.token !== 'v' && n.token !== '^' && n.token !== '<->' ){
     throw "Expected a binary connective";
   }
   var c = n.token;
@@ -58,6 +65,19 @@ function parse(l){
 function NOT(a){
   return {type:'not',lhs:a};
 }
+function IF(lhs,rhs){
+  return {type:'binary',connective:'->',
+            lhs:lhs,rhs:rhs};
+}
+function OR(lhs,rhs){
+    return {type:'binary',connective:'v',
+            lhs:lhs,rhs:rhs};
+}
+function AND(lhs,rhs){
+    return {type:'binary',connective:'^',
+            lhs:lhs,rhs:rhs};
+}
+
 
 function prove(thm, truths=[], hints=[]){
   console.log('show ', str(thm));
@@ -80,26 +100,36 @@ function prove(thm, truths=[], hints=[]){
     steps.push(...newsteps);
     truths.push(...newtruths);
     used.push(...newtruths);
-    console.log(...newtruths.map(str))
+    
+    if(!newsteps.length&&!finished(truths)){
+      // If modus ponens and tollens weren't enough look for a negated conditional then prove the base version
+      let negated = truths.filter(exp=>negofCond(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
+      if(negated.length===0){
+        // If there aren't any of those try deriving an antecendent to a conditional
+        let unusedConds = truths.filter(exp=>exp.type === 'binary'&&exp.connective === '->'        // Look for a conditional
+                            &&!truths.filter(ant=>equiv(ant,exp.lhs)||contra(ant,exp.lhs)).length// That does not have its antecendent or negation of its antecedent fufilled
+                            &&!hints.filter(hint=>equiv(hint,exp)).length);                        // And is not in the hints
+        if(unusedConds.length===0){
+          throw "Missing Hint (or not true) (Hard)";
+        }
+        newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
+        steps.push(...newsteps);
+        truths.push(unusedConds[0].lhs);
+        console.log('leaving hint 6');
+      }else{
+        negated = negated[0];
+        if(!used.filter(exp=>equal(exp,negated)).length){
+          steps.push({type:'repetition', reason:'repetition', exp:negated});
+        }
+        let base = simplify(negated).base;
+        steps.push(...reduction(negated, NOT(base)));
+        steps.push(...prove(base,[...truths],[negated,...hints]));
+        return [{type:'show', exp: thm}, {type: 'sub', steps:steps}];
+      }
+    }
   }while(newsteps.length&&!finished(truths));
   
-  if(!finished(truths)){
-    // If modus ponens and tollens weren't enough look for a negated conditional then prove the base version
-    let negated = truths.filter(exp=>negofCond(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
-    console.log(negated.map(str));
-    if(negated.length===0){
-      // If there aren't any of those try deriving an antecendent to a conditional
-      throw "Missing Hint (or not true)";
-    }
-    negated = negated[0];
-    if(!used.filter(exp=>equal(exp,negated)).length){
-      steps.push({type:'repetition', reason:'repetition', exp:negated});
-    }
-    let base = simplify(negated).base;
-    console.log(str(negated),str(base));
-    steps.push(...reduction(negated, NOT(base)));
-    steps.push(...prove(base,[...truths],[negated,...hints]));
-  }else if(!finished(used)){
+  if(!finished(used)){
     // If the contradiction isn't inside the immediate derivation, repeat the necessary lines
     let part = used.filter(a=>truths.filter(b=>contra(a,b)).length);
     if(part.length === 0){
@@ -130,58 +160,26 @@ function deduce(truths, listed){
 
   var steps = [];
   for(let cd of mp){
-    if(!listed.filter(exp=>equal(exp,cd)).length){
-      //steps.push({type:'repetition', reason:'repetition', exp:cd});
-    }
-    let list = false;
-    for(let exp of listed){
+    for(let exp of truths){
       if(equiv(exp,cd.lhs)){
         steps.push(...reduction(exp,cd.lhs));
-        list = true;
         break;
-      }
-    }
-    if(!list){
-      for(let exp of truths){
-        if(equiv(exp,cd.lhs)){
-          //steps.push({type:'repetition', reason:'repetition', exp:exp});
-          steps.push(...reduction(exp,cd.lhs));
-          break;
-        }
       }
     }
     steps.push({type: 'derived', reason:'MP',exp:cd.rhs,from:[cd.lhs,cd]});
   }
   for(let cd of mt){
-    if(!listed.filter(exp=>equal(exp,cd)).length){
-      //steps.push({type:'repetition', reason:'repetition', exp:cd});
-    }
-    let list = false;
     for(let exp of listed){
       if(contra(exp,cd.rhs)){
         steps.push(...reduction(exp,NOT(cd.rhs)));
-        list = true;
         break;
       }
     }
-    if(!list){
-      for(let exp of truths){
-        if(contra(exp,cd.rhs)){
-          //steps.push({type:'repetition', reason:'repetition', exp:exp});
-          steps.push(...reduction(exp,NOT(cd.rhs)));
-          break;
-        }
-      }
-    }
-    
     steps.push({type: 'derived', reason:'MT',exp:NOT(cd.lhs),from:[NOT(cd.rhs),cd]});
   }
   var DNConds = truths.filter(exp=>exp.type === 'not'&&cond(exp)&&
                 !truths.filter(base=>equal(base,simplify(exp).base)).length);
   for(let dncd of DNConds){
-    if(!listed.filter(exp=>equal(exp,dncd)).length){
-      //steps.push({type:'repetition', reason:'repetition', exp:dncd});
-    }
     let base = simplify(dncd).base;
     steps.push(...reduction(dncd,base));
   }
@@ -268,10 +266,11 @@ function writeProof(steps,i=1,indent=' ',map=new Map()){
   for(let step of steps){
     let s = '', r = '';
     if(step.type === 'show'){
-      s += i + '.' + indent + 'Show ' + str(step.exp);
+      s += indent + 'Show ' + str(step.exp);
+      map.set(str(step.exp),i);
     }
     if(step.type === 'repetition'){
-      s += i + '.' + indent + str(step.exp);
+      s += indent + str(step.exp);
       if(!map.has(str(step.exp))){
         throw "NOOOOOOO";
       }
@@ -280,16 +279,17 @@ function writeProof(steps,i=1,indent=' ',map=new Map()){
     }
     if(step.type === 'assumption'){
       map.set(str(step.exp),i);
-      s += i + '.' + indent + str(step.exp);
+      s += indent + str(step.exp);
       r = step.reason;
     }
     if(step.type === 'derived'){
       map.set(str(step.exp),i);
-      s += i + '.' + indent + str(step.exp);
+      s += indent + str(step.exp);
       r = step.reason + ' ' + (step.from.map(a=>map.get(str(a))).join(', '));
     }
     if(step.type === 'sub'){
       [s, r, i] = writeProof(step.steps,i,indent+'  ',new Map(map));
+      i--;
       out.push(...s);
       reasons.push(...r);
     }else{
@@ -306,8 +306,10 @@ function prettify(steps,reasons){
   for(let step of steps){
     max = Math.max(step.length,max)
   }
+  var digits = Math.ceil(Math.log10(steps.length));
   for(let [i,step] of steps.entries()){
-    out += step + (new Array(max-step.length+3).join(' ')) + reasons[i] + '\n';
+    out += ((new Array(1+digits-Math.ceil(Math.log10(i+2))).join(' '))+(i+1)+'. ')+
+            step + (new Array(max-step.length+3).join(' ')) + reasons[i] + '\n';
   }
   return out;
 }
@@ -326,6 +328,9 @@ function toConditional(exp){
   if(exp.connective === '^'){
     return NOT({type:'binary',connective:'->',
             lhs:toConditional(exp.lhs),rhs:NOT(toConditional(exp.rhs))});
+  }
+  if(exp.connective === '<->'){
+    return toConditional(AND(IF(exp.lhs,exp.rhs),IF(exp.rhs,exp.lhs)));
   }
   return {type:'binary',connective:exp.connective,
   lhs:toConditional(exp.lhs),rhs:toConditional(exp.rhs)};
