@@ -97,7 +97,18 @@ function prove(thm, truths=[], hints=[]){
   var used = [];
   if(thm.type === 'binary' && thm.connective === '->'){
     // Use conditional derivation to derive a conditional
-    return [{type:'show', exp: thm},{type: 'sub', steps:[{type:'assumption', reason:'assumption (cd)', exp: thm.lhs},...prove(thm.rhs,[thm.lhs,...truths],[...hints])]}];
+    
+    // Shortcut: if the consequent is already there, just repeat it
+    if(truths.filter(exp=>equiv(exp,thm.rhs)).length){
+      if(!truths.filter(exp=>equal(exp,thm.rhs)).length){
+        steps = reduction(truths.filter(exp=>equiv(exp,thm.rhs))[0],thm.rhs);
+      }else{
+        steps.push({type:'repetition', reason:'repetition', exp:thm.rhs});
+      }
+      console.log('Taking shortcut on',str(thm),'using',steps.map(s=>str(s.exp)));
+      [{type:'show', exp:thm, steps:steps}];
+    }
+    return [{type:'show', exp: thm,steps:[{type:'assumption', reason:'assumption (cd)', exp: thm.lhs},...prove(thm.rhs,[thm.lhs,...truths],[...hints])]}];
   }else if(thm.type === 'binary' && thm.connective === '<->'){
     // Show the subparts and then use conditional biconditional to derive biconditionals
     let forward = IF(thm.lhs,thm.rhs);
@@ -105,13 +116,13 @@ function prove(thm, truths=[], hints=[]){
     let steps = [...prove(forward,[...truths],[...hints]),                    // Prove the forward case
                  ...prove(backward,[...truths],[...hints]),                   // Then prove the backward case
                 {type:'derived',reason:'CB',exp:thm,from:[forward,backward]}];// Then combine them
-    return [{type:'show', exp: thm},{type: 'sub', steps:steps}];
+    return [{type:'show', exp: thm,steps:steps}];
   }else if(thm.type === 'binary' && thm.connective === '^'){
     // Show the subparts and then use adjunction to derive conjunctions
     let steps = [...prove(thm.lhs,[...truths],[...hints]),                    // Prove the left side
                  ...prove(thm.rhs,[...truths],[...hints]),                    // Then prove the right case
                 {type:'derived',reason:'ADJ',exp:thm,from:[thm.lhs,thm.rhs]}];// Then combine them
-    return [{type:'show', exp: thm},{type: 'sub', steps:steps}];
+    return [{type:'show', exp: thm,steps:steps}];
   }else{
     // Otherwise use indirect derivation
     steps.push({type:'assumption', reason:'assumption (id)', exp: NOT(thm)});
@@ -138,10 +149,12 @@ function prove(thm, truths=[], hints=[]){
         if(unusedConds.length===0){
           throw "Missing Hint (or not true) (Hard)";
         }
+        console.log('Hint: Antecdent to conditional');
         newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
         steps.push(...newsteps);
         truths.push(unusedConds[0].lhs);
       }else{
+        console.log('Hint: Negated connective');
         negated = negated[0];
         if(!used.filter(exp=>equal(exp,negated)).length){
           steps.push({type:'repetition', reason:'repetition', exp:negated});
@@ -149,7 +162,7 @@ function prove(thm, truths=[], hints=[]){
         let base = simplify(negated).base;
         steps.push(...reduction(negated, NOT(base)));
         steps.push(...prove(base,[...truths],[negated,...hints]));
-        return [{type:'show', exp: thm}, {type: 'sub', steps:steps}];
+        return [{type:'show', exp: thm, steps:steps}];
       }
     }
   }while(newsteps.length&&!finished(truths));
@@ -168,7 +181,7 @@ function prove(thm, truths=[], hints=[]){
     steps.push({type:'repetition', reason:'repetition', exp:second[0]});
   }
   
-  return [{type:'show', exp: thm}, {type: 'sub', steps:steps}];
+  return [{type:'show', exp: thm, steps:steps}];
 }
 
 // Main powerhouse of the prover, encodes Modus ponens, modus tollens, simplification, biconditional conditional
@@ -192,7 +205,7 @@ function deduce(truths, listed){
     steps.push({type: 'derived', reason:'MP',exp:cd.rhs,from:[cd.lhs,cd]});
   }
   for(let cd of mt){
-    for(let exp of listed){
+    for(let exp of truths){
       if(contra(exp,cd.rhs)){
         steps.push(...reduction(exp,NOT(cd.rhs)));
         break;
@@ -314,8 +327,14 @@ function writeProof(steps,i=1,indent=' ',map=new Map()){
   for(let step of steps){
     let s = '', r = '';
     if(step.type === 'show'){
-      s += indent + 'Show ' + str(step.exp);
+      out.push(indent + 'Show ' + str(step.exp));
+      reasons.push('');
+      [s, r, k] = writeProof(step.steps,i+1,indent+' | ',new Map(map));
       map.set(str(step.exp),i);
+      i = k;
+      out.push(...s);
+      reasons.push(...r);
+      continue;
     }
     if(step.type === 'repetition'){
       s += indent + str(step.exp);
@@ -335,15 +354,8 @@ function writeProof(steps,i=1,indent=' ',map=new Map()){
       s += indent + str(step.exp);
       r = step.reason + ' ' + (step.from.map(a=>map.get(str(a))).join(', '));
     }
-    if(step.type === 'sub'){
-      [s, r, i] = writeProof(step.steps,i,indent+'  ',new Map(map));
-      i--;
-      out.push(...s);
-      reasons.push(...r);
-    }else{
-      out.push(s);
-      reasons.push(r);
-    }
+    out.push(s);
+    reasons.push(r);
     i++;
   }
   return [out,reasons,i];
