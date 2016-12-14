@@ -481,6 +481,28 @@ function filterProof(proof,lines){
   }
 }
 
+// Not quite ready for use, needs a test to make sure cascading elimination (or multiline bottom level shows) works
+function eliminateShows(proof,graph){
+  outer:
+  for(let line of proof){
+    if(line.type === 'show'){
+      eliminateShows(line.sub,graph);
+      let depends = graph.get(line);
+      if(depends.length > 1 && depends.filter(l=>l.step.type==='assumption').length){
+        let [other,assumpt] = depends;
+        for(let [key,value] of graph){
+          if(value === assumpt && key !== line){
+            continue outer;
+          }
+        }
+        console.log('Only use of', assumpt, 'is the above show line:',line,'. Complementing line is',other);
+        line.type = 'normal';
+        line.step = other.step;
+      }
+    }
+  }
+}
+
 function reformProof(proof){
   var out = [];
   for(let line of proof){
@@ -494,8 +516,8 @@ function reformProof(proof){
 }
 
 function pruneSteps(steps){
-  var [s, graph] = treeify(steps);
-  var sub = flood([...s.keys()][0],graph);
-  filterProof(s,sub);
-  return reformProof(s)
+  var [proof, graph] = treeify(steps);
+  var sub = flood([...proof.keys()][0],graph);
+  filterProof(proof,sub);
+  return reformProof(proof)
 }
