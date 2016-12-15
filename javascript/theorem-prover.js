@@ -118,10 +118,24 @@ function prove(thm, truths=[], hints=[]){
                 {type:'derived',reason:'CB',exp:thm,from:[forward,backward]}];// Then combine them
     return [{type:'show', exp: thm,steps:steps}];
   }else if(thm.type === 'binary' && thm.connective === '^'){
+    console.log('Shown by separation',str(thm))
     // Show the subparts and then use adjunction to derive conjunctions
     let steps = [...prove(thm.lhs,[...truths],[...hints]),                    // Prove the left side
                  ...prove(thm.rhs,[...truths],[...hints]),                    // Then prove the right case
                 {type:'derived',reason:'ADJ',exp:thm,from:[thm.lhs,thm.rhs]}];// Then combine them
+    return [{type:'show', exp: thm,steps:steps}];
+  }else if(thm.type === 'binary' && thm.connective === 'v'){
+    // Show ~lhs->rhs, then show lhs, then use addition
+    let cdForm = IF(NOT(thm.lhs),thm.rhs);
+    let steps = [{type:'assumption', reason:'assumption (id)', exp: NOT(thm)}, // Assume negation
+                 ...prove(cdForm,[...truths],[...hints]),                      // Prove the conditional form
+                 {type:'show', exp: thm.lhs,steps:                             // Inlined proof equivilant to (~p->q)^~(pvq)->p
+                                [{type:'assumption', reason:'assumption (id)', exp: NOT(thm.lhs)},
+                                 {type:'derived',    reason:'MP',              exp: thm.rhs,  from:[NOT(thm.lhs),cdForm]},
+                                 {type:'derived',    reason:'ADD',             exp: thm,      from:[thm.rhs]},
+                                 {type:'repetition', reason:'repetition',      exp: NOT(thm)}
+                                ]},
+                {type:'derived',reason:'ADD',exp:thm,from:[thm.lhs]}];         // Then form the contradiction
     return [{type:'show', exp: thm,steps:steps}];
   }else{
     // Otherwise use indirect derivation
@@ -137,22 +151,35 @@ function prove(thm, truths=[], hints=[]){
     steps.push(...newsteps);
     truths.push(...newtruths);
     used.push(...newtruths);
-    
     if(!newsteps.length&&!finished(truths)){
       // If modus ponens and tollens weren't enough look for a negated connective then prove the base version
       let negated = truths.filter(exp=>negofConnective(exp)&&!hints.filter(hint=>equiv(hint,exp)).length);
       if(negated.length===0){
         // If there aren't any of those try deriving an antecendent to a conditional
         let unusedConds = truths.filter(exp=>exp.type === 'binary'&&exp.connective === '->'        // Look for a conditional
-                            &&!truths.filter(ant=>equiv(ant,exp.lhs)||contra(ant,exp.lhs)).length// That does not have its antecendent or negation of its antecedent fufilled
+                            &&!truths.filter(ant=>equiv(ant,exp.lhs)||contra(ant,exp.lhs)).length  // That does not have its antecendent or negation of its antecedent fufilled
                             &&!hints.filter(hint=>equiv(hint,exp)).length);                        // And is not in the hints
         if(unusedConds.length===0){
-          throw "Missing Hint (or not true) (Hard)";
+          let unusedOrs = truths.filter(exp=>exp.type === 'binary'&&exp.connective === 'v'         // Look for a disjunction
+                            &&!truths.filter(ant=>equiv(ant,exp.lhs)||equiv(ant,exp.rhs)).length   // That does not have either side fufilled
+                            &&!hints.filter(hint=>equiv(hint,exp)).length);                        // And is not in the hints
+          if(unusedOrs.length===0){
+            console.log(truths.map(str))
+            throw "Missing Hint (or not true) (Hard)";
+          }
+          console.log('Hint: Negation of side of a disjunction');
+          newsteps = prove(NOT(unusedOrs[0].lhs),[...truths],[unusedOrs[0],...hints]);
+          console.log(str(NOT(unusedOrs[0].lhs)),[...truths].map(str),[unusedOrs[0],...hints].map(str));
+          steps.push(...newsteps);
+          truths.push(NOT(unusedOrs[0].lhs));
+          hints.push(unusedOrs[0]);
+        }else{
+          console.log('Hint: Antecdent to conditional');
+          newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
+          steps.push(...newsteps);
+          truths.push(unusedConds[0].lhs);
+          hints.push(unusedConds[0]);
         }
-        console.log('Hint: Antecdent to conditional');
-        newsteps = prove(unusedConds[0].lhs,[...truths],[unusedConds[0],...hints]);
-        steps.push(...newsteps);
-        truths.push(unusedConds[0].lhs);
       }else{
         console.log('Hint: Negated connective');
         negated = negated[0];
@@ -184,7 +211,7 @@ function prove(thm, truths=[], hints=[]){
   return [{type:'show', exp: thm, steps:steps}];
 }
 
-// Main powerhouse of the prover, encodes Modus ponens, modus tollens, simplification, biconditional conditional
+// Main powerhouse of the prover, encodes Modus ponens, modus tollens, simplification, biconditional conditional, and modus tollendo ponens
 // Generates steps to produce everything that can be done with a single invokation of the above rules
 function deduce(truths, listed){
   // Use MP and MT
@@ -243,6 +270,30 @@ function deduce(truths, listed){
   for(let and of right){
     steps.push({type:'derived', reason:'S',exp:and.rhs,from:[and]});
   }
+  
+  // Use Modus Tollendo Ponens to add new truths
+  var ors  = truths.filter(exp=>exp.type === 'binary' && exp.connective === 'v');                                           // Find disjuctions
+  left  = ors.filter(or=>!truths.filter(exp=>equiv(or.lhs,exp)).length && truths.filter(exp=>contra(or.rhs,exp)).length);   // Without the left and a negation of the right
+  right = ors.filter(or=>!truths.filter(exp=>equiv(or.rhs,exp)).length && truths.filter(exp=>contra(or.lhs,exp)).length);   // Or without the right and a negation of the left
+  for(let or of left){
+    for(let exp of truths){
+      if(contra(exp,or.rhs)){
+        steps.push(...reduction(exp,NOT(or.rhs)));
+        break;
+      }
+    }
+    steps.push({type: 'derived', reason:'MTP',exp:or.lhs,from:[NOT(or.rhs),or]});
+  }
+  for(let or of right){
+    for(let exp of truths){
+      if(contra(exp,or.lhs)){
+        steps.push(...reduction(exp,NOT(or.lhs)));
+        break;
+      }
+    }
+    steps.push({type: 'derived', reason:'MTP',exp:or.rhs,from:[NOT(or.lhs),or]});
+  }
+  
   
   return [steps,steps.map(a=>a.exp)];
 }
@@ -447,14 +498,14 @@ function findExp(s,exp){
       return [line];
     }
   }
-  throw "EXP NOT FOUND";
+  return false;
 }
 function complete(s,exp){
-  if(exp.type === 'binary' && (exp.connective === '<->' || exp.connective === '^')){
-    return findExp(s,exp);
+  if(exp.type === 'binary' && (exp.connective === '<->' || exp.connective === '^' ||  exp.connective === 'v')){
+    return findExp(s,exp)||contradiction(s);
   }
   if(exp.type === 'binary' && exp.connective === '->'){
-    return findExp(s,exp.rhs);
+    return findExp(s,exp.rhs)||contradiction(s);
   }
   return contradiction(s);
 }
