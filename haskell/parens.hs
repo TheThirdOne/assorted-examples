@@ -9,13 +9,27 @@ insertParen (Tree left mid right) paren@(_, c)
   | c < left        = (Just paren, [Tree left mid right], Nothing)
   | otherwise       = combine (partition mid paren) paren left right
 
+deleteParen :: Entry -> Paren -> (Maybe Paren, [Entry], Maybe Paren)
+deleteParen (Tree left mid right) paren@(dir, c)
+  | right < c || c < left       = error "Can't delete paren: not present"
+  | left == c && dir == False   = (Nothing, mid, Just (True,right))
+  | right == c && dir == True   = (Just (False,left), mid, Nothing)
+  | otherwise                   = deleteHelper (partition mid paren) paren left right
+
+deleteHelper :: ([Entry], Maybe Entry, [Entry]) -> Paren -> Int -> Int -> (Maybe Paren, [Entry], Maybe Paren)
+deleteHelper (_, Nothing, _) _ _ _                               = error "Can't delete paren: not present"
+deleteHelper (xs, Just e@(Tree l _ _), ys) (True,c) left right   = (Just (False,left), xs++[Tree l (list++ys) right], Nothing)
+  where (_, list, _) = deleteParen e (True,c)
+deleteHelper (xs, Just e@(Tree _ _ r), ys) (False,c) left right  = (Nothing, (Tree left (xs++list) r):ys, Just (True, right))
+  where (_, list, _) = deleteParen e (False,c)
+
 -- | Recombines lists of entries and a paren, inserting the paren deeper if necessary
 combine :: ([Entry], Maybe Entry, [Entry]) -> Paren -> Int -> Int -> (Maybe Paren, [Entry], Maybe Paren)
 combine (xs, Nothing, ys) (True,c) left right                = (Nothing, (Tree left xs c):ys,         Just (True, right))
-combine (xs, (Just e@(Tree _ _ r)), ys) (True,c) left right  = (Nothing, (Tree left (xs++list) r):ys, Just (True, right))
+combine (xs, Just e@(Tree _ _ r), ys) (True,c) left right    = (Nothing, (Tree left (xs++list) r):ys, Just (True, right))
   where (_, list, _) = insertParen e (True,c)
 combine (xs, Nothing, ys) (False,c) left right               = (Just (False,left), xs++[Tree c ys right],         Nothing)
-combine (xs, (Just e@(Tree l _ _)), ys) (False,c) left right = (Just (False,left), xs++[Tree l (list++ys) right], Nothing)
+combine (xs, Just e@(Tree l _ _), ys) (False,c) left right   = (Just (False,left), xs++[Tree l (list++ys) right], Nothing)
   where (_, list, _) = insertParen e (False,c)
 
 -- | Partitions a list of entries into the ones on the left of a paren, around a paren and to the right of a paren
@@ -30,6 +44,14 @@ partition (tree@(Tree left m right):xs) paren@(_, c)
 insertParenTop :: [TopEntry] -> Paren -> [TopEntry]
 insertParenTop [] p = [P p]
 insertParenTop xs paren = linearProbe $ combineTop (partitionTop xs paren) paren
+
+deleteParenTop :: [TopEntry] -> Paren -> [TopEntry]
+deleteParenTop [] _     = error "Can't delete paren from empty list"
+deleteParenTop xs paren = simplifyMaybe $ deleteTopHelper (partitionTop xs paren) paren
+
+simplifyMaybe :: ([TopEntry],Maybe Paren,[TopEntry]) -> [TopEntry]
+simplifyMaybe (xs,Nothing,ys)    = xs++ys
+simplifyMaybe (xs,Just paren,ys) = linearProbe (xs,paren,ys)
 
 -- | Look for the closest match to an unpaired paren
 linearProbe :: ([TopEntry],Paren,[TopEntry]) -> [TopEntry]
@@ -54,37 +76,45 @@ trimEntry :: TopEntry -> Entry
 trimEntry (E e) = e
 trimEntry _     = error "Can't trim a non Tree"
 
+deleteTopHelper :: ([TopEntry], Maybe TopEntry, [TopEntry]) -> Paren -> ([TopEntry],Maybe Paren,[TopEntry])
+deleteTopHelper (_, Nothing, _) _                           = error "Can't delete paren: not present"
+deleteTopHelper (xs, Just (P paren@(dir,c)), ys) par@(d,i)  = if dir == d && c == i
+                                                              then (xs,Nothing,ys)
+                                                              else error "Can't delete paren; opposite paren in index"
+deleteTopHelper (xs, Just (E e@(Tree l _ _)), ys) (True,c)  = (xs, Just (False,l),(map E list)++ys)
+  where (_, list, _) = deleteParen e (True,c)
+deleteTopHelper (xs, Just (E e@(Tree _ _ r)), ys) (False,c) = (xs++(map E list), Just (True,r), ys)
+  where (_, list, _) = deleteParen e (False,c)
+
+
 -- | Similar to combine, but prepares for linear probing instead of returning a list
-combineTop :: ([TopEntry], Maybe Entry, [TopEntry]) -> Paren -> ([TopEntry],Paren,[TopEntry])
-combineTop (xs, Nothing, ys) paren = (xs,paren,ys)
-combineTop (xs, (Just e@(Tree _ _ r)), ys) (True,c)  = (xs++(map E list), (True,r), ys)
+combineTop :: ([TopEntry], Maybe TopEntry, [TopEntry]) -> Paren -> ([TopEntry],Paren,[TopEntry])
+combineTop (xs, Nothing, ys) paren                     = (xs,paren,ys)
+combineTop (_, Just (P _), _) _par                     = error "Can't insert a paren inside another paren"
+combineTop (xs, Just (E e@(Tree _ _ r)), ys) (True,c)  = (xs++(map E list), (True,r), ys)
   where (_, list, _) = insertParen e (True,c)
-combineTop (xs, (Just e@(Tree l _ _)), ys) (False,c) = (xs, (False, l), (map E list)++ys)
+combineTop (xs, Just (E e@(Tree l _ _)), ys) (False,c) = (xs, (False, l), (map E list)++ys)
   where (_, list, _) = insertParen e (False,c)
 
 -- | Same as partition, but for impure lists
-partitionTop :: [TopEntry] -> Paren -> ([TopEntry], Maybe Entry, [TopEntry])
+partitionTop :: [TopEntry] -> Paren -> ([TopEntry], Maybe TopEntry, [TopEntry])
 partitionTop [] _ = ([], Nothing, [])
 partitionTop ((E tree@(Tree left m right)):xs) paren@(_, c)
   | c < left      = ([],Nothing,(E tree):xs)
   | right < c     = ((E tree):front,mid,back)
-  | otherwise     = ([],Just tree,xs)
+  | otherwise     = ([],Just (E tree),xs)
   where (front, mid, back) = partitionTop xs paren
 partitionTop ((P par@(_,a)):xs) paren@(_, b)
   | b < a     = ([],Nothing,(P par):xs)
   | a < b     = ((P par):front,mid,back)
-  | otherwise = error "Parens can't be inside eachother"
+  | otherwise = ([],Just (P par),xs)
     where (front, mid, back) = partitionTop xs paren
 
 -- | Binds a useful form of fromString'
 fromString = fromString' [] 0
 
 fromString' :: [TopEntry] -> Int -> [Char] -> [TopEntry]
-fromString' list i (x:xs) = fromString' (insertParenTop list (toParen x i)) (i+1) xs
-fromString' list _ []     = list
-
--- | Turns a char + int into a paren
-toParen :: Char -> Int -> Paren
-toParen '(' i = (False,i)
-toParen ')' i = (True,i)
-toParen  _  _ = error "Not a paren"
+fromString' list i ('(':xs) = fromString' (insertParenTop list (False,i)) (i+1) xs
+fromString' list i (')':xs) = fromString' (insertParenTop list (True,i))  (i+1) xs
+fromString' list i (x:xs)   = fromString' list (i+1) xs
+fromString' list _ []       = list
