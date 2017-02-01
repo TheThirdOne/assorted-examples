@@ -1,3 +1,5 @@
+module parens where
+
 data TopEntry = P Paren | E Entry deriving (Show)
 data Entry = Tree Int [Entry] Int deriving (Show)
 type Paren = (Bool, Int)
@@ -118,3 +120,27 @@ fromString' list i ('(':xs) = fromString' (insertParenTop list (False,i)) (i+1) 
 fromString' list i (')':xs) = fromString' (insertParenTop list (True,i))  (i+1) xs
 fromString' list i (x:xs)   = fromString' list (i+1) xs
 fromString' list _ []       = list
+
+convert :: Int -> [Char]
+convert i = ["\ESC[31m","\ESC[32m","\ESC[33m","\ESC[34m","\ESC[35m","\ESC[36m"] !! (i `mod` 6)
+
+printColored :: [TopEntry] -> [Char] -> [Char]
+printColored [] str  = "\ESC[39m"++str
+printColored _ []    = ""
+printColored ((P (False,_)):xs) ('(':str)  = "\ESC[39m(" ++ (printColored xs str)
+printColored ((P (True,_)):xs)  (')':str)  = "\ESC[39m)" ++ (printColored xs str)
+printColored ((E tree):xs) str             = out++printColored xs remStr
+  where (remStr, out) = printColored' [tree] str 0
+printColored xs (c:str) = c:(printColored xs str)
+
+printColored' :: [Entry] -> [Char] -> Int -> ([Char],[Char])
+printColored' [] str _ = (str,"")
+printColored' _ [] _ = ("","")
+printColored' ((Tree _ mid _):xs) ('(':str) i = (remStr, (convert i)++"(\ESC[39m"++out++tillClose++(convert i)++")"++"\ESC[39m"++out2)
+  where (afterMid, out) = printColored' mid str (i+1)
+        tillClose = takeWhile (/= ')') afterMid
+        afterClose = dropWhile (/= ')') afterMid
+        (remStr,out2) = printColored' xs (tail afterClose) i
+        
+printColored' xs (c:str) i = (remStr, c:out)
+  where (remStr, out) = printColored' xs str i
