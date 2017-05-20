@@ -3,7 +3,7 @@ function primeFactor(n){
   var out = [];
   if(Math.sqrt(n) > (primes[primes.length-1]||0)){
     console.info('generating primes to ',30*Math.ceil(Math.sqrt(n)));
-    primes = generatePrimes(5*Math.ceil(Math.sqrt(n)))[1];
+    primes = generatePrimes(30*Math.ceil(Math.sqrt(n)))[1];
   }
   for (let prime of primes) {
     let i = 0;
@@ -21,7 +21,7 @@ function primeFactor(n){
   if(n != 1){
     
     console.warn("missed prime ",n);
-    primes = generatePrimes(n)[1];
+    primes = generatePrimes(n+1)[1];
     out.push(...primeFactor(n));
   }
   return out;
@@ -29,7 +29,7 @@ function primeFactor(n){
 
 
 function generatePrimes(n){
-  var arr = [];
+  var arr = new Array(n);
   var primes = [];
   for(var i = 2; i < n; i++){
     if(!arr[i]){
