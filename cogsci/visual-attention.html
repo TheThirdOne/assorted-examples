@@ -1,0 +1,78 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script>
+      var el = document.getElementById("el");
+      var pres, num, time;
+      var can = document.getElementById("canvas");
+      var ctx = can.getContext("2d");
+      var arr = [];
+      var start = function(){
+        pres = Math.random() > .5;
+        num = Math.floor(Math.random()*15)+5;
+        var x,y;
+        arr = [];
+        if(pres){
+          ctx.fillStyle = "#FF0000";
+          x = Math.floor(Math.random()*250);
+          y = Math.floor(Math.random()*275);
+          arr.push({x:x,y:y,w:50,h:25});
+          ctx.fillRect(x,y,50,25);
+        }
+        for(var i = 0; i < num;i++){
+          ctx.fillStyle = "#00FF00";
+          if(Math.random() > .5){
+            ctx.fillStyle = "#FF0000";
+            w = 25;
+            h = 50;
+          }else{
+            ctx.fillStyle = "#00FF00";
+            w = 50;
+            h = 25;
+          }
+          x = Math.floor(Math.random()*(300-w));
+          y = Math.floor(Math.random()*(300-h));
+          if(check(x,y,w,h,arr)){
+            ctx.fillRect(x,y,w,h);
+            arr.push({x:x,y:y,w:w,h:h});
+          }else{
+            i--;
+          }
+        }
+        time = new Date().getTime();
+      }
+      
+      var reset = function(){
+        num = undefined;
+        ctx.clearRect(0,0,300,300);
+        setTimeout(start,1000);
+      }
+      
+      var text = "";
+      var log = function(pres, num, success, time){
+        text += pres + "\t" + num + "\t" + success + "\t" + time + "\n";
+      }
+      document.onkeydown = function(e){
+        if(num !== undefined && (e.keyCode === 65 || e.keyCode === 68)){
+          var success = (e.keyCode === 68) ^ pres;
+          log(pres, num, !!success, new Date().getTime() - time);
+          reset();
+        }
+      }
+      function check(x,y,w,h,arr){
+        for(var i = 0; i < arr.length; i++){
+          if((x     > arr[i].x - 5 && x     < arr[i].x + arr[i].w + 5 && y     > arr[i].y - 5&& y     < arr[i].y + arr[i].h + 5)|| // x  ,y
+             (x + w > arr[i].x - 5 && x + w < arr[i].x + arr[i].w + 5 && y     > arr[i].y - 5&& y     < arr[i].y + arr[i].h + 5)|| // x+w,y
+             (x     > arr[i].x - 5 && x     < arr[i].x + arr[i].w + 5 && y + h > arr[i].y - 5&& y + h < arr[i].y + arr[i].h + 5)|| // x  ,y+h
+             (x + w > arr[i].x - 5 && x + w < arr[i].x + arr[i].w + 5 && y + h > arr[i].y - 5&& y + h < arr[i].y + arr[i].h + 5)){ // x+w,y+h
+            return false;
+          }
+        }
+        return true;
+      }
+      reset();
+    </script>
+  </body>
+</html>

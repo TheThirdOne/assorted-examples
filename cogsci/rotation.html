@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <style>
+      #el {
+        display: inline-block;
+      }
+      .wrapper {
+        display: inline-block;
+        float: left;
+      	text-align:center;
+      	width:50%;
+      }
+    </style>
+  </head>
+  <body>
+    <img style="display:none" src="https://cinefilm8mm.files.wordpress.com/2011/12/shape5.jpg">
+    <img style="display:none" src="https://cinefilm8mm.files.wordpress.com/2011/12/shape3.jpg">
+    <img style="display:none" src="http://hookedonhouses.net/wp-content/uploads/2009/01/Father-of-the-Bride-Lookalike-house.jpg">
+    <select id="types">
+        <option selected value='<div style="font-size:160">R</div>'>R</option>
+        <option value='<img width="200" height="200" src="https://cinefilm8mm.files.wordpress.com/2011/12/shape5.jpg">'>L Shape</option>
+        <option value='<img width="200" height="200" src="https://cinefilm8mm.files.wordpress.com/2011/12/shape3.jpg">'>Z Shape</option>
+        <option value='<img width="200" height="200" src="http://hookedonhouses.net/wp-content/uploads/2009/01/Father-of-the-Bride-Lookalike-house.jpg">'>House</option>
+    </select>
+    <br>
+    <div class="wrapper"><br><br><br><br><br><br><br><br><div id="dup"><div style="font-size:160">R</div></div></div>
+    <div class="wrapper"><br><br><br><br><br><br><br><br><div id="el"><div style="font-size:160">R</div></div></div>
+    <script>
+      var el = document.getElementById("el");
+      var flip, deg, time;
+      
+      var start = function(){
+        flip = Math.random() > .5;
+        deg = Math.floor(Math.random()*10)*20
+        el.style.cssText = "transform:"+(flip?"scaleX(-1)":"")+"rotate("+deg+"deg);";
+        time = new Date().getTime();
+      }
+      
+      var reset = function(){
+        deg = undefined;
+        el.style.display = "none";
+        setTimeout(start,1000);
+      }
+      
+      var text = "";
+      var log = function(flip, deg, success, time){
+        text += flip + "," + deg + "," + success + "," + time + "\n";
+      }
+      document.onkeydown = function(e){
+        if(deg !== undefined && (e.keyCode === 65 || e.keyCode === 68)){
+          var success = (e.keyCode === 68) ^ flip;
+          log(flip, deg, success, new Date().getTime() - time);
+          reset();
+        }
+      }
+      document.getElementById("types").onchange = function(){
+        reset();
+        dup.innerHTML = this.value;
+        el.innerHTML = this.value;
+        text += "Switched symbol."
+      }
+      reset();
+    </script>
+  </body>
+</html>
