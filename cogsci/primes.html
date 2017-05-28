@@ -1,0 +1,95 @@
+<html>
+  <head>
+    <style>
+      #el {
+        display: inline-block;
+      }
+      .wrapper {
+        display: inline-block;
+        float: left;
+      	text-align:left;
+      	width:200%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper"><br><br><br><br><br><br><br><br><div id="el"><div style="font-size:160">R</div></div></div>
+    <script>
+      var el = document.getElementById("el");
+      var prime, number, time;
+      
+      function generatePrimes(n){
+        var arr = new Array(n);
+        var primes = [];
+        for(var i = 2; i < n; i++){
+          if(!arr[i]){
+            primes.push(i);
+            for(var k = i*i; k < n; k += i){
+              arr[k] = true;
+            }
+          }
+        }
+        return primes;
+      }
+      var N = 500;
+      var primes = generatePrimes(N);
+      function isPrime(n){
+        return primes.indexOf(n) !== -1;
+      }
+      var start = function(){
+        number = Math.random()*N|0;
+        prime = isPrime(number);
+        el.innerHTML = number;
+        el.style.display = "";
+        time = new Date().getTime();
+      }
+      
+      var reset = function(str =''){
+        el.innerText = str;
+        setTimeout(start,1000);
+      }
+      
+      var text = "";
+      var log = function(prime, number, largest, success, time){
+        text += prime + "," + number + "," + largest + "," + success + "," + time + "\n";
+      }
+      document.onkeydown = function(e){
+        if(number !== undefined && (e.keyCode === 65 || e.keyCode === 68)){
+          var success = (e.keyCode === 68) ^ prime;
+          let factors = primeFactor(number);
+          log(prime, number, success, factors[0].p, new Date().getTime() - time);
+          reset((success?'Correct':'Wrong') + '; factors: ' + factors.map(pr=>pr.p+'^'+pr.n).join(', '));
+        }
+      }
+      
+      function primeFactor(n){
+        var out = [];
+        if(Math.sqrt(n) > (primes[primes.length-1]||0)){
+          console.info('generating primes to ',30*Math.ceil(Math.sqrt(n)));
+          primes = generatePrimes(30*Math.ceil(Math.sqrt(n)))[1];
+        }
+        for (let prime of primes) {
+          let i = 0;
+          while(n % prime === 0){
+            n /= prime;
+            i++;
+          }
+          if(i > 0){
+            out.push({p:prime,n:i});
+          }
+          if(prime > n){
+            break;
+          }
+        }
+        if(n != 1){
+
+          console.warn("missed prime ",n);
+          primes = generatePrimes(n+1)[1];
+          out.push(...primeFactor(n));
+        }
+        return out;
+      }
+      reset();
+    </script>
+  </body>
+</html>
