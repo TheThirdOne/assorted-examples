@@ -171,3 +171,13 @@ var contrapositive_e = proof(['B','C'],Deduction('(B->C)',[P('(B->C)'),
 ...contrapositive_d('~C','~B'),
 MP('(~~B->~~C)','(~C->~B)')]));
 
+// |- (B->C)->((~B->C)->C)
+var separation_by_cases_f = proof(['B','C'],Deduction('(B->C)',Deduction('(~B->C)', [
+P('(B->C)'),P('(~B->C)'),
+...contrapositive_e('B','C'),
+MP('(B->C)','(~C->~B)'),
+...contrapositive_e('~B','C'),
+MP('(~B->C)','(~C->~~B)'),
+Statement('((~C->~~B)->((~C->~B)->C))', 'Axiom (A3)'),
+MP('(~C->~~B)','((~C->~B)->C)'),
+MP('(~C->~B)','C')])))
