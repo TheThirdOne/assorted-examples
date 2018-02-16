@@ -4,7 +4,7 @@
 function proof(identifiers, statements){
   var underscored = identifiers.map(a=>'_'+a);
   statements = substitute(identifiers, underscored, statements);
-  return substitutions => {
+  return (...substitutions) => {
     if(identifiers.length != substitutions.length) throw "Improper substitutions";
     return substitute(underscored,substitutions,statements);
   }
@@ -34,12 +34,18 @@ function substitute(identifiers, substitutions, stmts){
 function MP(antecedent, consequent){
   return Statement(consequent, 'Modus Ponens', antecedent);
 }
+function P(premise){
+  return Statement(premise,'Premise');
+}
+function A1(B,C){
+  return Statement('(' + B + '->(' + C + '->' + B + '))', 'Axiom (A1)');
+}
 
 // Simple hardcoded proof that B->B for all B
 var BthenB = proof(['B'], [Statement("((B->((B->B)->B))->((B->(B->B))->(B->B)))", "Axiom (A2)"),
-Statement("(B->((B->B)->B))", "Axiom (A1)"),
+A1('B','(B->B)'),
 MP("(B->((B->B)->B))","((B->(B->B))->(B->B))"),
-Statement("(B->(B->B))", "Axiom (A1)"),
+A1('B','B'),
 MP("(B->(B->B))","(B->B)")]);
 
 // Just a helper for the deduction theorem (Don't use elsewhere)
@@ -54,18 +60,18 @@ function Deduction(ident, stmts){
   for(var stmt of stmts){
     if(stmt.rule.startsWith('Axiom')){
       out.push(stmt)
-      out.push(Statement('('+stmt.fact + '->(' + ident + '->' + stmt.fact + '))', 'Axiom (A1)'));
+      out.push(A1(stmt.fact,ident));
       out.push(MP(stmt.fact,'('+ident+'->'+stmt.fact+')'));
     }else if(stmt.rule == 'Premise'){
       if(stmt.fact == ident){
         out.push(...BthenB([ident]));
       }else{
         out.push(stmt)
-        out.push(Statement('('+stmt.fact + '->(' + ident + '->' + stmt.fact + '))', 'Axiom (A1)'));
+        out.push(A1(stmt.fact,ident));
         out.push(MP(stmt.fact,'('+ident+'->'+stmt.fact+')'));
       }
    }else if(stmt.rule == 'Modus Ponens'){
-        out.push(...deduction_helper([ident, stmt.previous, stmt.fact]));
+        out.push(...deduction_helper(ident, stmt.previous, stmt.fact));
    }else throw "Not a known rule";
   }
   return out;
@@ -76,11 +82,10 @@ function reduceRepeatPremise(stmts){
   var facts = stmts.map(s=>s.fact);
   var out = [];
   for(var i = 0; i < stmts.length; i++){
-    if(stmts[i].rule != 'Premise'){
-      out.push(stmts[i]);
-      continue;
+    if(!(facts.indexOf(stmts[i].fact) < i)){
+     out.push(stmts[i]);
+     if(stmts[i].rule == 'Premise')throw stmts[i].fact + ' is unsubstantiated: ' + i;
     }
-    if(facts.indexOf(stmts[i].fact) == -1)throw stmts[i].fact + ' is unsubstantiated';
   }
  return out;
 }
@@ -107,32 +112,43 @@ function to_string(stmts){
 }
 
 
-
-
 // Proofs from Mendelson, Elliott. Introduction to Mathematical Logic, Sixth Edition
 
 // B->C, C->D |- B->D
 var corrallary1_10_a =  proof(['B','C','D'], Deduction('B',[
-Statement("(B->C)", "Premise"),
-Statement("(C->D)", "Premise"),
-Statement("B", "Premise"),
+P('(B->C)'),P('(C->D)'),P('B'),
 MP('B','C'),
 MP('C','D')]));
 
 // B->(C->D),C |- B->D
 var corrallary1_10_b =  proof(['B','C','D'], Deduction('B',
-[Statement("(B->(C->D))", "Premise"),
-Statement("C", "Premise"),
-Statement("B", "Premise"),
+[P("(B->(C->D))"),P("C"),P("B"),
 MP('B','(C->D)'),
 MP('C','D')]));
 
 // |- ~~B->B
 var double_negation_a = proof(['B'],
-[Statement('(~B->~~B)->((~B->~B)->B)', 'Axiom (A3)'),
+[Statement('((~B->~~B)->((~B->~B)->B))', 'Axiom (A3)'),
 ...BthenB(['~B']),
-...corrallary1_10_b(['(~B->~~B)', '(~B->~B)', 'B']),
+...corrallary1_10_b('(~B->~~B)', '(~B->~B)', 'B'),
 Statement('(~~B->(~B->~~B))', 'Axiom (A1)'),
-...corrallary1_10_a(['~~B','(~B->~~B)','B'])
+...corrallary1_10_a('~~B','(~B->~~B)','B')
 ]);
 
+// |- B->~~B
+var double_negation_b = proof(['B'],[Statement('((~~~B->~B)->((~~~B->B)->~~B))', 'Axiom (A3)'),
+...double_negation_a('~B'),
+MP('(~~~B->~B)','((~~~B->B)->~~B)'),
+Statement('(B->(~~~B->B))', 'Axiom (A1)'),
+...corrallary1_10_a('B','(~~~B->B)','~~B')]);
+
+// |- ~B->(B->C)
+var lemma1_11_c = proof(['B','C'],Deduction('~B',Deduction('B',[Statement('~B', 'Premise'),
+Statement('B', 'Premise'),
+Statement('(B->(~C->B))', 'Axiom (A1)'),
+Statement('(~B->(~C->~B))', 'Axiom (A1)'),
+MP('B', '(~C->B)'),
+MP('~B', '(~C->~B)'),
+Statement('((~C->~B)->((~C->B)->C))', 'Axiom (A3)'),
+MP('(~C->~B)','((~C->B)->C)'),
+MP('(~C->B)','C')])));
