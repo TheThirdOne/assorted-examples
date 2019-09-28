@@ -1,4 +1,8 @@
 // Update state by doing a replacement by rules logging whenever a change is made
+// General format for state is "#" followed by the initial number in first cell followeed by "|a"
+// Additional cells will be added as neccessary with a new "#0"
+// A general default so you can try the function is "#0|a"
+// A full example is ```var rules = buildRegex("[->+<]"); rules.push(...updateRules); update(rules,"#9|a")```
 function update(rules,state){
   var old = state;
   for(let rule of rules){
